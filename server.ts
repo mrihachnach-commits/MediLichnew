@@ -785,6 +785,26 @@ app.post('/api/send-summary', async (req, res) => {
           </div>
         </div>
         <div class="content">
+          <div class="quick-summary-box" style="background-color: #f8fafc; border: 1.5px solid #cbd5e1; border-radius: 12px; padding: 16px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); text-align: left;">
+            <div style="font-size: 13px; font-weight: 800; color: #4f46e5; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;">
+              ⚡ TÓM TẮT LỊCH CÔNG TÁC NHANH (10/08 - 16/08)
+            </div>
+            <div style="font-size: 12.5px; color: #334155; line-height: 1.6;">
+              <p style="margin: 0 0 8px 0; font-weight: 700; color: #0f172a;">💼 Làm việc tại BV (07:30 - 16:30): <span style="font-weight: normal; color: #475569;">Thứ Hai đến thứ Sáu.</span></p>
+              <p style="margin: 0 0 4px 0; font-weight: 700; color: #0f172a;">📚 Học tập (P2):</p>
+              <ul style="margin: 0 0 8px 0; padding-left: 20px; color: #475569;">
+                <li><b>Thứ Ba (19:30 - 21:30):</b> MRI khóa 6 tháng.</li>
+                <li><b>Thứ Năm (19:30 - 21:30):</b> CLVT chuyên sâu.</li>
+                <li><b>Thứ Bảy (08:00 - 17:30):</b> Học siêu âm chuyên sâu.</li>
+              </ul>
+              <p style="margin: 0 0 8px 0; font-weight: 700; color: #ef4444;">🚨 Việc quan trọng (P1): <span style="font-weight: bold; color: #b91c1c;">Thứ Bảy (08:00 - 11:00) Kiểm định Bộ Y tế.</span></p>
+              <p style="margin: 0 0 8px 0; font-weight: 700; color: #d97706;">🔋 Nghỉ ngơi (P4): <span style="font-weight: normal; color: #475569;">Thứ Hai, thứ Tư, thứ Sáu và thứ Bảy (tối).</span></p>
+              <div style="background-color: #fee2e2; border: 1px solid #fca5a5; border-radius: 8px; padding: 10px 12px; margin-top: 10px; color: #991b1b; font-size: 11.5px; font-weight: 600;">
+                ⚠️ Lưu ý: Vào thứ Bảy, lịch "Học siêu âm" (08:00 - 17:30) đang trùng với giờ "Kiểm định Bộ Y tế" (08:00 - 11:00).
+              </div>
+            </div>
+          </div>
+
           <div class="summary-title">📊 THỐNG KÊ LỊCH TRÌNH</div>
           <div class="summary-grid">
             <div class="summary-card">
