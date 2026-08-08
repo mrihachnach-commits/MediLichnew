@@ -1531,4 +1531,9 @@ async function startServer() {
   });
 }
 
-startServer();
+// Don't start standard listener when running as Vercel serverless functions
+if (!process.env.VERCEL) {
+  startServer();
+}
+
+export default app;
