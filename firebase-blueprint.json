@@ -1,0 +1,43 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile and settings",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string" },
+        "isAdmin": { "type": "boolean" },
+        "settings": { "type": "object" }
+      },
+      "required": ["uid", "email"]
+    },
+    "ScheduleEvent": {
+      "title": "Schedule Event",
+      "description": "An event in the doctor's schedule",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "title": { "type": "string" },
+        "startTime": { "type": "string" },
+        "endTime": { "type": "string" },
+        "dayOfWeek": { "type": "integer" },
+        "category": { "type": "string" },
+        "priority": { "type": "string" },
+        "date": { "type": "string" }
+      },
+      "required": ["id", "userId", "title", "startTime", "endTime", "dayOfWeek", "category", "priority"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profiles"
+    },
+    "/users/{userId}/events/{eventId}": {
+      "schema": "ScheduleEvent",
+      "description": "User specific schedule events"
+    }
+  }
+}

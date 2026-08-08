@@ -1,0 +1,8 @@
+{
+  "name": "Doctor AI Assistant",
+  "description": "Trợ lý AI Quản lý Lịch \u0026 Công việc Thông minh dành cho Bác sĩ Chẩn đoán Hình ảnh Bệnh viện Nội tiết Trung ương",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

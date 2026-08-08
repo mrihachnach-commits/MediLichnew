@@ -1,0 +1,70 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // 1. Global Default Deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // 2. Reusable Primitives
+    function isSignedIn() { return request.auth != null; }
+    function isOwner(userId) { return isSignedIn() && request.auth.uid == userId; }
+    function isAdmin() { return isSignedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid)); }
+    function isValidId(id) { return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); }
+    function incoming() { return request.resource.data; }
+    function existing() { return resource.data; }
+
+    // 3. Entity Validation Helpers
+    function isValidUser(data) {
+      return data.uid is string && data.uid.size() <= 128
+          && data.email is string && data.email.size() <= 256
+          && (data.isAdmin == null || data.isAdmin is bool);
+    }
+
+    function isValidEvent(data) {
+      return data.id is string && data.id.size() <= 128
+          && data.userId is string && data.userId.size() <= 128
+          && data.title is string && data.title.size() <= 256
+          && data.startTime is string && data.startTime.size() <= 10
+          && data.endTime is string && data.endTime.size() <= 10
+          && (data.dayOfWeek is int || data.dayOfWeek is number) && data.dayOfWeek >= 0 && data.dayOfWeek <= 6
+          && data.category is string && data.category.size() <= 100
+          && data.priority is string && data.priority.size() <= 50;
+    }
+
+    // 4. Match Blocks
+    match /users/{userId} {
+      allow get: if isOwner(userId) || isAdmin();
+      allow list: if isAdmin();
+      
+      allow create: if isOwner(userId) 
+                    && isValidUser(incoming())
+                    && (
+                      !incoming().keys().hasAny(['isAdmin'])
+                      || request.auth.token.email == 'hoctap853@gmail.com'
+                      || request.auth.token.email == 'hoanghiep1296@gmail.com'
+                    )
+                    && incoming().uid == request.auth.uid;
+      
+      allow update: if (isOwner(userId) && isValidUser(incoming()) && !incoming().diff(existing()).affectedKeys().hasAny(['isAdmin', 'uid']))
+                    || isAdmin();
+
+      match /events/{eventId} {
+        allow read: if isOwner(userId) || isAdmin();
+        allow create: if isOwner(userId) && isValidEvent(incoming()) && incoming().userId == request.auth.uid;
+        allow update: if isOwner(userId) && isValidEvent(incoming()) && incoming().userId == request.auth.uid;
+        allow delete: if isOwner(userId) || isAdmin();
+      }
+    }
+
+    match /admins/{uid} {
+      allow read: if isSignedIn();
+      // Allow bootstrap email to create their own admin doc
+      allow create: if isSignedIn() && request.auth.uid == uid && (
+        request.auth.token.email == 'hoctap853@gmail.com' ||
+        request.auth.token.email == 'hoanghiep1296@gmail.com'
+      );
+    }
+  }
+}
