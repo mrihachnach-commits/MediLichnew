@@ -98,6 +98,17 @@ export default function App() {
     },
   ]);
 
+  const handleResetChat = () => {
+    setChatMessages([
+      {
+        id: 'msg-welcome',
+        sender: 'assistant',
+        text: `Xin chào Bác sĩ! Em đã khởi động lại phiên trò chuyện. Bác sĩ cần em thêm, dời lịch hay sắp xếp công việc ưu tiên Eisenhower không ạ?`,
+        timestamp: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
+      },
+    ]);
+  };
+
   const [currentBaseDate, setCurrentBaseDate] = useState<string>('2026-08-10');
 
   // Real-time synchronization with Firestore for Events & Settings
@@ -654,6 +665,7 @@ export default function App() {
           onClose={() => setIsChatOpen(false)}
           messages={chatMessages}
           onSendMessage={handleSendMessage}
+          onReset={handleResetChat}
           isLoading={isAiLoading}
           isVoiceActive={isVoiceActive}
           onToggleVoice={() => setIsVoiceActive((prev) => !prev)}

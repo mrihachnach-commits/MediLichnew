@@ -480,41 +480,50 @@ app.get('/api/calendar/export.ics', (req, res) => {
 
 // Helper function to generate manual schedule summary
 function generateEmailBodyHtml(events: any[]): string {
-  const studyEvents = events.filter(e => e.category === 'study').sort((a, b) => {
-    const dayA = a.dayOfWeek === 0 ? 7 : a.dayOfWeek;
-    const dayB = b.dayOfWeek === 0 ? 7 : b.dayOfWeek;
-    return dayA - dayB;
-  });
-  const importantEvents = events.filter(e => e.priority === 'P1');
-  const restEvents = events.filter(e => e.category === 'rest').sort((a, b) => {
-    const dayA = a.dayOfWeek === 0 ? 7 : a.dayOfWeek;
-    const dayB = b.dayOfWeek === 0 ? 7 : b.dayOfWeek;
-    return dayA - dayB;
-  });
-  
   const daysMap: Record<number, string> = {
     1: 'Thứ Hai', 2: 'Thứ Ba', 3: 'Thứ Tư', 4: 'Thứ Năm', 
     5: 'Thứ Sáu', 6: 'Thứ Bảy', 0: 'Chủ Nhật'
   };
 
+  const sortByDay = (a: any, b: any) => {
+    const dayA = a.dayOfWeek === 0 ? 7 : a.dayOfWeek;
+    const dayB = b.dayOfWeek === 0 ? 7 : b.dayOfWeek;
+    return dayA - dayB;
+  };
+
+  const workEvents = events.filter(e => e.category === 'hospital' || e.category === 'clinic').sort(sortByDay);
+  const studyEvents = events.filter(e => e.category === 'study').sort(sortByDay);
+  const importantEvents = events.filter(e => e.priority === 'P1').sort(sortByDay);
+  const restEvents = events.filter(e => e.category === 'rest').sort(sortByDay);
+
+  // Simple overlap detection (P1 vs Study on Saturday)
+  const satP1 = importantEvents.filter(e => e.dayOfWeek === 6);
+  const satStudy = studyEvents.filter(e => e.dayOfWeek === 6);
+  const hasOverlap = satP1.length > 0 && satStudy.length > 0;
+
   return `
     <div style="background-color: #f8fafc; border: 1.5px solid #cbd5e1; border-radius: 12px; padding: 16px; margin-bottom: 20px; font-family: sans-serif;">
       <h2 style="font-size: 16px; color: #1e293b; margin-top: 0;">Tóm tắt lịch công tác tuần</h2>
-      <p style="margin: 4px 0;">💼 <b>Làm việc tại BV (07:30 - 16:30):</b> Thứ Hai đến thứ Sáu.</p>
-      <p style="margin: 4px 0;">💼 <b>Làm việc tại PK (08:00 - 17:00):</b> Chủ nhật.</p>
       
-      <p style="margin: 8px 0 4px 0;">📚 <b>Học tập (P2):</b></p>
+      <p style="margin: 4px 0;">💼 <b>Làm việc:</b></p>
       <ul style="margin: 0; padding-left: 20px;">
-        ${studyEvents.map(e => `<li><b>${daysMap[e.dayOfWeek] || 'Ngày khác'} (${e.startTime}):</b> ${e.title}</li>`).join('')}
+        ${workEvents.map(e => `<li><b>${daysMap[e.dayOfWeek] || 'Ngày khác'} (${e.startTime || ''}${e.endTime ? ' - ' + e.endTime : ''}):</b> ${e.title}</li>`).join('')}
       </ul>
 
-      <p style="margin: 8px 0 4px 0;">🚨 <b>Việc quan trọng (P1):</b> ${importantEvents.map(e => `${daysMap[e.dayOfWeek] || 'Ngày khác'} (${e.startTime}) ${e.title}`).join(', ')}</p>
+      <p style="margin: 8px 0 4px 0;">📚 <b>Học tập (P2):</b></p>
+      <ul style="margin: 0; padding-left: 20px;">
+        ${studyEvents.map(e => `<li><b>${daysMap[e.dayOfWeek] || 'Ngày khác'} (${e.startTime || ''}):</b> ${e.title}</li>`).join('')}
+      </ul>
+
+      <p style="margin: 8px 0 4px 0;">🚨 <b>Việc quan trọng (P1):</b> ${importantEvents.map(e => `${daysMap[e.dayOfWeek] || 'Ngày khác'} (${e.startTime || ''}) ${e.title}`).join(', ')}</p>
       
       <p style="margin: 4px 0;">🔋 <b>Nghỉ ngơi (P4):</b> ${restEvents.map(e => daysMap[e.dayOfWeek]).join(', ')}</p>
       
+      ${hasOverlap ? `
       <div style="margin-top: 10px; color: #991b1b; font-size: 13px;">
-        ⚠️ <b>Lưu ý:</b> Vào thứ Bảy, lịch "Học siêu âm" (08:00 - 17:30) đang trùng với giờ "Kiểm định Bộ Y tế" (08:00 - 11:00).
+        ⚠️ <b>Lưu ý:</b> Đang có trùng lịch vào thứ Bảy.
       </div>
+      ` : ''}
     </div>
   `;
 }

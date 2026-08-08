@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Markdown from 'react-markdown';
 import { ChatMessage } from '../types';
-import { Sparkles, Send, Mic, MicOff, X, Bot, User, Cpu, CheckCircle2, Zap, Brain } from 'lucide-react';
+import { Sparkles, Send, Mic, MicOff, X, Bot, User, RotateCcw, CheckCircle2, Zap, Brain, RefreshCw } from 'lucide-react';
 
 interface ChatbotWidgetProps {
   isOpen: boolean;
@@ -12,6 +12,7 @@ interface ChatbotWidgetProps {
   isVoiceActive: boolean;
   onToggleVoice: () => void;
   onOpenSettings?: () => void;
+  onReset?: () => void;
   learnedMemoriesCount?: number;
 }
 
@@ -24,6 +25,7 @@ export const ChatbotWidget: React.FC<ChatbotWidgetProps> = ({
   isVoiceActive,
   onToggleVoice,
   onOpenSettings,
+  onReset,
   learnedMemoriesCount = 5,
 }) => {
   const [inputText, setInputText] = useState('');
@@ -68,6 +70,15 @@ export const ChatbotWidget: React.FC<ChatbotWidgetProps> = ({
         </div>
 
         <div className="flex items-center gap-1.5">
+          {onReset && (
+            <button
+              onClick={onReset}
+              className="text-slate-400 hover:text-amber-400 p-1 rounded-lg hover:bg-slate-800 transition-colors"
+              title="Reset Chat"
+            >
+              <RefreshCw className="w-4 h-4" />
+            </button>
+          )}
           {onOpenSettings && (
             <button
               onClick={onOpenSettings}
