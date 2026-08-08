@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Calendar, LayoutGrid, Mic, Sparkles, Stethoscope, Clock, Sliders, LogOut, Globe, ExternalLink, Menu, X, RotateCcw, History } from 'lucide-react';
+import { Calendar, LayoutGrid, Mic, Sparkles, Clock, Sliders, LogOut, Globe, ExternalLink, Menu, X, RotateCcw, History } from 'lucide-react';
 import { AppSettings } from '../types';
 import { useAuth } from '../contexts/AuthContext';
+import { UltrasoundLogo } from './UltrasoundLogo';
 
 interface NavbarProps {
   activeTab: 'calendar' | 'matrix' | 'analytics';
@@ -37,11 +38,11 @@ export const Navbar: React.FC<NavbarProps> = ({
       <div className="max-w-7xl mx-auto px-3 sm:px-4 py-2.5 sm:py-3 flex items-center justify-between gap-2.5">
         {/* Doctor Branding */}
         <div className="flex items-center gap-2.5 min-w-0 flex-1">
-          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white shadow-md shadow-indigo-600/30 shrink-0 overflow-hidden">
+          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center text-[#2A9D9D] shadow-md shrink-0 overflow-hidden">
             {user?.photoURL ? (
               <img src={user.photoURL} alt={user.displayName || 'Avatar'} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
             ) : (
-              <Stethoscope className="w-5 h-5" />
+              <UltrasoundLogo size={24} className="text-[#2A9D9D]" />
             )}
           </div>
           <div className="min-w-0 flex-1">

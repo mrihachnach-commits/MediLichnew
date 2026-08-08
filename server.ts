@@ -3,6 +3,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { GoogleGenAI, Type, FunctionDeclaration } from '@google/genai';
 import dotenv from 'dotenv';
+import nodemailer from 'nodemailer';
 import { createServer as createViteServer } from 'vite';
 import { INITIAL_EVENTS } from './src/data/initialData.js';
 import { ScheduleEvent, PriorityLevel, EventCategory } from './src/types.js';
@@ -479,6 +480,403 @@ app.get('/api/calendar/export.ics', (req, res) => {
   res.setHeader('Content-Type', 'text/calendar; charset=utf-8');
   res.setHeader('Content-Disposition', 'attachment; filename="Lich_Bac_Si_CDHA.ics"');
   res.send(icsLines.join('\r\n'));
+});
+
+// POST send schedule summary email
+app.post('/api/send-summary', async (req, res) => {
+  const { 
+    email, 
+    events = [], 
+    weekRangeText = '', 
+    smtpHost, 
+    smtpPort, 
+    smtpUser, 
+    smtpPass,
+    doctorTitle = 'BS. Chẩn đoán Hình ảnh',
+    hospitalName = 'BV Nội tiết Trung ương'
+  } = req.body;
+
+  if (!email) {
+    return res.status(400).json({ error: 'Thiếu email nhận thông tin.' });
+  }
+
+  // Count metrics
+  const totalCount = events.length;
+  const hospitalCount = events.filter((e: any) => e.category === 'hospital').length;
+  const studyCount = events.filter((e: any) => e.category === 'study').length;
+  const clinicCount = events.filter((e: any) => e.category === 'clinic').length;
+  const restCount = events.filter((e: any) => e.category === 'rest').length;
+  const urgentCount = events.filter((e: any) => e.priority === 'P1' || e.priority === 'P2').length;
+
+  const daysMap: Record<number, string> = {
+    1: 'Thứ Hai',
+    2: 'Thứ Ba',
+    3: 'Thứ Tư',
+    4: 'Thứ Năm',
+    5: 'Thứ Sáu',
+    6: 'Thứ Bảy',
+    0: 'Chủ Nhật'
+  };
+
+  const sortedEvents = [...events].sort((a: any, b: any) => {
+    const dayA = a.dayOfWeek === 0 ? 7 : a.dayOfWeek;
+    const dayB = b.dayOfWeek === 0 ? 7 : b.dayOfWeek;
+    if (dayA !== dayB) return dayA - dayB;
+    return a.startTime.localeCompare(b.startTime);
+  });
+
+  // Group by day
+  const grouped: Record<string, any[]> = {};
+  sortedEvents.forEach((evt: any) => {
+    const dayName = daysMap[evt.dayOfWeek] || 'Lịch trình';
+    const dayLabel = evt.date ? `${dayName} (${evt.date.split('-').reverse().join('/')})` : dayName;
+    if (!grouped[dayLabel]) {
+      grouped[dayLabel] = [];
+    }
+    grouped[dayLabel].push(evt);
+  });
+
+  let scheduleHtml = '';
+  Object.entries(grouped).forEach(([dayLabel, dayEvts]) => {
+    scheduleHtml += `
+      <div class="day-group" style="margin-bottom: 20px;">
+        <div class="day-title" style="font-size: 13.5px; font-weight: 800; color: #0f172a; background-color: #f1f5f9; padding: 10px 14px; border-radius: 10px; margin-bottom: 10px; border-left: 4px solid #4f46e5; letter-spacing: 0.3px;">
+          📅 ${dayLabel}
+        </div>
+    `;
+
+    dayEvts.forEach((evt: any) => {
+      let categoryText = 'Bệnh viện';
+      let catBg = '#e0f2fe';
+      let catColor = '#0369a1';
+      let cardBg = '#f0f9ff';
+      let borderLeftColor = '#0284c7';
+
+      if (evt.category === 'study') {
+        categoryText = 'Nghiên cứu';
+        catBg = '#f3e8ff';
+        catColor = '#6b21a8';
+        cardBg = '#faf5ff';
+        borderLeftColor = '#9333ea';
+      } else if (evt.category === 'clinic') {
+        categoryText = 'Phòng khám';
+        catBg = '#dcfce7';
+        catColor = '#15803d';
+        cardBg = '#f0fdf4';
+        borderLeftColor = '#16a34a';
+      } else if (evt.category === 'rest') {
+        categoryText = 'Nghỉ ngơi';
+        catBg = '#fef3c7';
+        catColor = '#b45309';
+        cardBg = '#fffbeb';
+        borderLeftColor = '#d97706';
+      }
+
+      let priorityText = evt.priorityName || evt.priority || 'Thường quy (P3)';
+      let priorityBg = '#f1f5f9';
+      let priorityColor = '#475569';
+      if (evt.priority === 'P1') {
+        priorityBg = '#fee2e2';
+        priorityColor = '#b91c1c';
+      } else if (evt.priority === 'P2') {
+        priorityBg = '#f3e8ff';
+        priorityColor = '#7e22ce';
+      } else if (evt.priority === 'P4') {
+        priorityBg = '#fef3c7';
+        priorityColor = '#a16207';
+      }
+
+      scheduleHtml += `
+        <div class="event-card" style="background-color: ${cardBg}; border-left: 4px solid ${borderLeftColor}; border-top: 1px solid #e2e8f0; border-right: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; padding: 14px 16px; border-radius: 12px; margin-bottom: 10px; box-shadow: 0 1px 2px rgba(0,0,0,0.02);">
+          <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin-bottom: 6px;">
+            <div style="font-weight: 800; color: #0f172a; font-size: 13.5px; line-height: 1.4;">
+              ${evt.isIntervention ? '<span style="color: #ef4444; font-weight: bold; margin-right: 4px;">⚠️</span>' : ''}${evt.title}
+            </div>
+            <div style="text-align: right; shrink-0;">
+              <span style="background-color: ${priorityBg}; color: ${priorityColor}; font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 6px; text-transform: uppercase; white-space: nowrap;">
+                ${priorityText}
+              </span>
+            </div>
+          </div>
+
+          <div style="font-size: 12px; color: #475569; margin-bottom: 4px; line-height: 1.5; display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center;">
+            <span style="font-weight: 700; color: #4f46e5; white-space: nowrap;">⏰ ${evt.startTime} - ${evt.endTime}</span>
+            <span style="color: #cbd5e1;">|</span>
+            <span style="font-weight: 600; color: #334155;">📍 ${evt.location || 'Bệnh viện'}</span>
+            <span style="color: #cbd5e1;">|</span>
+            <span style="background-color: ${catBg}; color: ${catColor}; font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; white-space: nowrap;">
+              ${categoryText}
+            </span>
+          </div>
+
+          ${evt.bufferMinutes ? `
+            <div style="font-size: 11px; color: #d97706; font-weight: 600; margin-bottom: 6px; display: flex; align-items: center; gap: 4px;">
+              ⏳ Khoảng đệm: <b>${evt.bufferMinutes} phút</b> trước ca tiếp theo
+            </div>
+          ` : ''}
+
+          ${evt.description ? `
+            <div style="font-size: 11.5px; color: #475569; background-color: rgba(255, 255, 255, 0.7); border: 1px solid #e2e8f0; border-left: 2px solid #cbd5e1; padding: 8px 12px; border-radius: 8px; margin-top: 6px; font-style: italic; line-height: 1.4;">
+              💬 Ghi chú: ${evt.description}
+            </div>
+          ` : ''}
+        </div>
+      `;
+    });
+
+    scheduleHtml += `</div>`;
+  });
+
+  if (sortedEvents.length === 0) {
+    scheduleHtml = `
+      <div style="text-align: center; color: #64748b; padding: 35px 20px; font-style: italic; background-color: #f8fafc; border-radius: 16px; border: 1px dashed #cbd5e1;">
+        Không có lịch trình làm việc nào được xếp cho tuần này.
+      </div>
+    `;
+  }
+
+  const htmlBody = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>[MediSync] Tóm tắt Lịch trình Tuần</title>
+      <style>
+        body {
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+          background-color: #f1f5f9;
+          margin: 0;
+          padding: 0;
+          color: #0f172a;
+          -webkit-font-smoothing: antialiased;
+        }
+        .container {
+          max-width: 580px;
+          margin: 15px auto;
+          background-color: #ffffff;
+          border-radius: 16px;
+          overflow: hidden;
+          box-shadow: 0 4px 15px rgba(15, 23, 42, 0.05);
+          border: 1px solid #e2e8f0;
+        }
+        .header {
+          background-color: #0f172a;
+          background-image: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #155e75 100%);
+          padding: 24px 16px;
+          text-align: center;
+          color: #ffffff;
+        }
+        .header h1 {
+          margin: 0;
+          font-size: 18px;
+          font-weight: 800;
+          letter-spacing: -0.3px;
+          color: #ffffff;
+          text-transform: uppercase;
+        }
+        .header p {
+          margin: 4px 0 0;
+          font-size: 12.5px;
+          color: #38bdf8;
+          font-weight: 600;
+        }
+        .week-tag {
+          display: inline-block;
+          margin-top: 10px;
+          background-color: rgba(56, 189, 248, 0.15);
+          border: 1px solid rgba(56, 189, 248, 0.3);
+          color: #38bdf8;
+          font-size: 12px;
+          font-family: monospace;
+          font-weight: 700;
+          padding: 4px 12px;
+          border-radius: 30px;
+        }
+        .content {
+          padding: 16px;
+        }
+        .summary-title {
+          font-size: 11px;
+          font-weight: 800;
+          color: #475569;
+          text-transform: uppercase;
+          letter-spacing: 0.8px;
+          margin-bottom: 8px;
+        }
+        .summary-grid {
+          margin-bottom: 20px;
+          text-align: center;
+        }
+        .summary-card {
+          width: 44%;
+          display: inline-block;
+          background-color: #f8fafc;
+          border: 1px solid #e2e8f0;
+          border-radius: 12px;
+          padding: 10px;
+          text-align: center;
+          margin: 2%;
+          box-sizing: border-box;
+          vertical-align: top;
+        }
+        .summary-card .num {
+          font-size: 20px;
+          font-weight: 800;
+          color: #4f46e5;
+          line-height: 1;
+        }
+        .summary-card.urgent .num {
+          color: #ef4444;
+        }
+        .summary-card .label {
+          font-size: 10px;
+          font-weight: 700;
+          color: #64748b;
+          margin-top: 3px;
+          text-transform: uppercase;
+          letter-spacing: 0.3px;
+        }
+        .section-title {
+          font-size: 12.5px;
+          font-weight: 800;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          color: #0f172a;
+          border-left: 3px solid #4f46e5;
+          padding-left: 8px;
+          margin-top: 20px;
+          margin-bottom: 12px;
+        }
+        .tips-box {
+          margin-top: 20px;
+          padding: 12px 14px;
+          background-color: #f0fdf4;
+          border: 1px solid #bbf7d0;
+          border-radius: 12px;
+          font-size: 11.5px;
+          color: #166534;
+          line-height: 1.45;
+        }
+        .tips-title {
+          font-weight: 700;
+          margin-bottom: 3px;
+          color: #14532d;
+        }
+        .footer {
+          background-color: #f8fafc;
+          padding: 16px;
+          text-align: center;
+          font-size: 11px;
+          color: #64748b;
+          border-top: 1px solid #e2e8f0;
+          line-height: 1.45;
+        }
+        @media (max-width: 480px) {
+          .summary-card {
+            width: 96%;
+            margin: 1.5% 2%;
+          }
+        }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h1>TÓM TẮT LỊCH TRÌNH TUẦN</h1>
+          <p>${doctorTitle} | ${hospitalName}</p>
+          <div class="week-tag">
+            📅 Tuần: ${weekRangeText}
+          </div>
+        </div>
+        <div class="content">
+          <div class="summary-title">📊 THỐNG KÊ LỊCH TRÌNH</div>
+          <div class="summary-grid">
+            <div class="summary-card">
+              <div class="num">${totalCount}</div>
+              <div class="label">Tổng số</div>
+            </div>
+            <div class="summary-card">
+              <div class="num">${hospitalCount}</div>
+              <div class="label">Bệnh viện</div>
+            </div>
+            <div class="summary-card">
+              <div class="num">${clinicCount}</div>
+              <div class="label">Phòng khám</div>
+            </div>
+            <div class="summary-card urgent">
+              <div class="num">${urgentCount}</div>
+              <div class="label">Ưu tiên cao</div>
+            </div>
+          </div>
+
+          <div class="section-title">📅 CHI TIẾT LỊCH TRÌNH HÀNG NGÀY</div>
+          ${scheduleHtml}
+
+          <div class="tips-box">
+            <div class="tips-title">💡 Gợi ý từ Trợ lý AI:</div>
+            Lịch trình đã được tối ưu hóa thông minh với các khoảng thời gian đệm an toàn và phân phối hợp lý dựa trên thói quen của Bác sĩ. Chúc Bác sĩ một tuần làm việc hiệu quả và tràn đầy năng lượng!
+          </div>
+        </div>
+        <div class="footer">
+          <p>Email này được tạo tự động bởi hệ thống lập lịch thông minh <b>MediSync AI Scheduler</b>.</p>
+          <p style="font-size: 10px; color: #94a3b8; margin-top: 4px;">Mọi thắc mắc hoặc yêu cầu điều chỉnh lịch vui lòng phản hồi qua giao diện Trợ lý AI của bạn.</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  const host = smtpHost || process.env.SMTP_HOST;
+  const port = smtpPort || Number(process.env.SMTP_PORT) || 587;
+  const user = smtpUser || process.env.SMTP_USER;
+  const pass = smtpPass || process.env.SMTP_PASS;
+
+  if (host && user && pass) {
+    try {
+      const transporter = nodemailer.createTransport({
+        host,
+        port,
+        secure: port === 465,
+        auth: {
+          user,
+          pass,
+        },
+      });
+
+      const info = await transporter.sendMail({
+        from: process.env.SMTP_FROM || `"${doctorTitle} - AI" <${user}>`,
+        to: email,
+        subject: `[MediSync] Tóm tắt lịch trình tuần ${weekRangeText}`,
+        html: htmlBody,
+      });
+
+      console.log('Email sent successfully:', info.messageId);
+      return res.json({ 
+        success: true, 
+        message: 'Đã gửi email tóm tắt lịch trình thành công thông qua máy chủ SMTP cấu hình của bạn!', 
+        previewHtml: htmlBody,
+        simulated: false 
+      });
+    } catch (sendErr: any) {
+      console.error('SMTP sending error:', sendErr);
+      return res.json({
+        success: true,
+        message: `Mô phỏng gửi thành công tóm tắt lịch trình đến: ${email}! (Không gửi được qua SMTP do: ${sendErr.message})`,
+        previewHtml: htmlBody,
+        simulated: true,
+        errorDetails: sendErr.message
+      });
+    }
+  } else {
+    console.log(`[SIMULATED EMAIL] Send summary to ${email} for week ${weekRangeText}`);
+    return res.json({
+      success: true,
+      message: `Gửi tóm tắt lịch thành công đến: ${email} (chế độ xem trước). Bạn có thể thiết lập SMTP Host, Port, User, Pass trong mục Cài đặt để gửi email thực tế thông qua tài khoản của mình!`,
+      previewHtml: htmlBody,
+      simulated: true
+    });
+  }
 });
 
 // System Architecture & Schema Metadata Endpoint

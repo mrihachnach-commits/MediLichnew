@@ -252,6 +252,63 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-cyan-300 font-mono focus:outline-none focus:border-cyan-500"
               />
             </div>
+            
+            <div>
+              <label className="block text-slate-300 font-medium mb-1">Email Nhận Tóm Tắt Lịch (Configured Email)</label>
+              <input
+                type="email"
+                placeholder="bacsi@gmail.com"
+                value={formData.notificationEmail || ''}
+                onChange={(e) => setFormData({ ...formData, notificationEmail: e.target.value })}
+                className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-slate-100 font-mono focus:outline-none focus:border-indigo-500"
+              />
+            </div>
+
+            <div className="border-t border-slate-800/60 pt-3 space-y-3 col-span-1 md:col-span-2">
+              <span className="text-xs font-semibold text-slate-400">Cài đặt Email SMTP (Tùy chọn - Để gửi mail thật)</span>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] text-slate-400 mb-0.5">SMTP Host</label>
+                  <input
+                    type="text"
+                    placeholder="smtp.gmail.com"
+                    value={formData.smtpHost || ''}
+                    onChange={(e) => setFormData({ ...formData, smtpHost: e.target.value })}
+                    className="w-full bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-slate-100 font-mono focus:outline-none focus:border-indigo-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] text-slate-400 mb-0.5">SMTP Port</label>
+                  <input
+                    type="number"
+                    placeholder="587"
+                    value={formData.smtpPort !== undefined ? formData.smtpPort : ''}
+                    onChange={(e) => setFormData({ ...formData, smtpPort: e.target.value ? Number(e.target.value) : undefined })}
+                    className="w-full bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-slate-100 font-mono focus:outline-none focus:border-indigo-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] text-slate-400 mb-0.5">SMTP Username (Email)</label>
+                  <input
+                    type="text"
+                    placeholder="example@gmail.com"
+                    value={formData.smtpUser || ''}
+                    onChange={(e) => setFormData({ ...formData, smtpUser: e.target.value })}
+                    className="w-full bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-slate-100 font-mono focus:outline-none focus:border-indigo-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] text-slate-400 mb-0.5">SMTP Password / App Password</label>
+                  <input
+                    type="password"
+                    placeholder="Mật khẩu ứng dụng"
+                    value={formData.smtpPass || ''}
+                    onChange={(e) => setFormData({ ...formData, smtpPass: e.target.value })}
+                    className="w-full bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-slate-100 font-mono focus:outline-none focus:border-indigo-500"
+                  />
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* SECTION 1.5: Cấu Hình API Trợ Lý AI */}

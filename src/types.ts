@@ -95,6 +95,11 @@ export interface AppSettings {
   shopaikeyApiKey?: string;
   shopaikeyBaseUrl?: string;
   appDomain?: string;
+  notificationEmail?: string;
+  smtpHost?: string;
+  smtpPort?: number;
+  smtpUser?: string;
+  smtpPass?: string;
 }
 
 export const DEFAULT_LEARNED_MEMORIES: string[] = [

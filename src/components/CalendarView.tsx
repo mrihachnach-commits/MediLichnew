@@ -28,6 +28,8 @@ import {
   CalendarCheck2,
   Check,
   ChevronDown,
+  Mail,
+  Loader2,
 } from 'lucide-react';
 
 interface CalendarViewProps {
@@ -121,6 +123,83 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
   // Draft state for Sunday Planner
   const [plannerDraftEvents, setPlannerDraftEvents] = useState<ScheduleEvent[] | null>(null);
   const [isActionFromPlanner, setIsActionFromPlanner] = useState<boolean>(false);
+
+  // Email Summary States
+  const [isSendingEmail, setIsSendingEmail] = useState(false);
+  const [emailStatusModal, setEmailStatusModal] = useState<{
+    isOpen: boolean;
+    success: boolean;
+    message: string;
+    previewHtml?: string;
+  } | null>(null);
+
+  const handleSendEmailSummary = async () => {
+    const targetEmail = settings.notificationEmail;
+    if (!targetEmail) {
+      alert('Vui lòng vào mục Cài đặt (bánh răng) để cấu hình Email nhận tóm tắt trước khi gửi!');
+      return;
+    }
+
+    setIsSendingEmail(true);
+    try {
+      // Get events of the current week (from Monday to Sunday)
+      const currentWeekEvents = filteredEvents.filter((evt) => {
+        if (evt.date) {
+          const evtDate = new Date(evt.date);
+          const monDate = new Date(monday);
+          const sunDate = new Date(sunday);
+          evtDate.setHours(0, 0, 0, 0);
+          monDate.setHours(0, 0, 0, 0);
+          sunDate.setHours(0, 0, 0, 0);
+          return evtDate >= monDate && evtDate <= sunDate;
+        }
+        return true;
+      });
+
+      const response = await fetch('/api/send-summary', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: targetEmail,
+          events: currentWeekEvents,
+          weekRangeText,
+          smtpHost: settings.smtpHost,
+          smtpPort: settings.smtpPort,
+          smtpUser: settings.smtpUser,
+          smtpPass: settings.smtpPass,
+          doctorTitle: settings.doctorTitle,
+          hospitalName: settings.hospitalName,
+        }),
+      });
+
+      const result = await response.json();
+      if (response.ok && result.success) {
+        setEmailStatusModal({
+          isOpen: true,
+          success: true,
+          message: result.message,
+          previewHtml: result.previewHtml,
+        });
+      } else {
+        setEmailStatusModal({
+          isOpen: true,
+          success: false,
+          message: result.error || 'Có lỗi xảy ra khi gửi email tóm tắt lịch trình.',
+        });
+      }
+    } catch (err: any) {
+      console.error('Email sending error:', err);
+      setEmailStatusModal({
+        isOpen: true,
+        success: false,
+        message: 'Không thể kết nối máy chủ để gửi email. Chi tiết: ' + err.message,
+      });
+    } finally {
+      setIsSendingEmail(false);
+    }
+  };
 
   // Form state for adding new event
   const [newEvent, setNewEvent] = useState({
@@ -657,6 +736,20 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
           </div>
 
           <div className="flex items-center gap-2 w-full sm:w-auto shrink-0 justify-end">
+            <button
+              onClick={handleSendEmailSummary}
+              disabled={isSendingEmail}
+              className="bg-sky-500/20 hover:bg-sky-500/30 border border-sky-500/50 text-sky-300 text-xs font-bold px-3 py-2 rounded-xl flex items-center justify-center gap-1.5 shadow-md transition-all flex-1 sm:flex-initial shrink-0 disabled:opacity-50"
+              title="Gửi tóm tắt toàn bộ lịch làm việc tuần này qua email đã cài đặt"
+            >
+              {isSendingEmail ? (
+                <Loader2 className="w-4 h-4 animate-spin text-sky-400" />
+              ) : (
+                <Mail className="w-4 h-4 text-sky-400" />
+              )}
+              <span className="truncate">{isSendingEmail ? 'Đang gửi...' : 'Gửi Mail Tuần'}</span>
+            </button>
+
             <button
               onClick={handleOpenSundayPlanner}
               className="bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/50 text-amber-300 text-xs font-bold px-3 py-2 rounded-xl flex items-center justify-center gap-1.5 shadow-md transition-all flex-1 sm:flex-initial shrink-0"
@@ -2071,6 +2164,69 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
               >
                 <Check className="w-4 h-4" />
                 <span>Hoàn Tất Lên Lịch & Đồng Bộ</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Email Sending Status & Preview Modal */}
+      {emailStatusModal?.isOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4">
+          <div className="bg-[#0F172A] border border-slate-800 rounded-3xl w-full max-w-2xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+            {/* Header */}
+            <div className="p-4 border-b border-slate-800 flex items-center justify-between bg-slate-900/50">
+              <div className="flex items-center gap-2">
+                <div className={`w-8 h-8 rounded-xl flex items-center justify-center border ${
+                  emailStatusModal.success 
+                    ? 'bg-emerald-950 text-emerald-400 border-emerald-800/60' 
+                    : 'bg-rose-950 text-rose-400 border-rose-800/60'
+                }`}>
+                  {emailStatusModal.success ? <Check className="w-4 h-4" /> : <X className="w-4 h-4" />}
+                </div>
+                <div>
+                  <h3 className="font-bold text-slate-200 text-sm">Trạng thái Gửi Email</h3>
+                  <p className="text-[11px] text-slate-400 font-medium">Báo cáo tóm tắt lịch trình tuần {weekRangeText}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setEmailStatusModal(null)}
+                className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Content Body */}
+            <div className="p-5 overflow-y-auto space-y-4 flex-1">
+              <div className={`p-3.5 rounded-2xl border text-xs font-semibold leading-relaxed ${
+                emailStatusModal.success 
+                  ? 'bg-emerald-950/20 border-emerald-800/40 text-emerald-300' 
+                  : 'bg-rose-950/20 border-rose-800/40 text-rose-300'
+              }`}>
+                {emailStatusModal.message}
+              </div>
+
+              {emailStatusModal.previewHtml && (
+                <div className="space-y-2">
+                  <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block">Bản xem trước Email gửi cho Bác sĩ:</span>
+                  <div className="border border-slate-800 rounded-2xl overflow-hidden bg-white max-h-[50vh] overflow-y-auto p-1 shadow-inner">
+                    <iframe
+                      srcDoc={emailStatusModal.previewHtml}
+                      title="Email Preview"
+                      className="w-full min-h-[450px] border-0"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="p-4 border-t border-slate-800 flex justify-end bg-slate-900/30">
+              <button
+                onClick={() => setEmailStatusModal(null)}
+                className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-md transition-all"
+              >
+                Đóng Cửa Sổ
               </button>
             </div>
           </div>

@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { motion } from 'motion/react';
-import { LogIn, UserPlus, Lock, Mail, AlertCircle, Stethoscope, ArrowRight } from 'lucide-react';
+import { LogIn, UserPlus, Lock, Mail, AlertCircle, ArrowRight } from 'lucide-react';
+import { UltrasoundLogo } from './UltrasoundLogo';
 
 export function LoginScreen() {
   const { login, loginWithEmail, registerWithEmail, loading } = useAuth();
@@ -71,11 +72,11 @@ export function LoginScreen() {
         className="max-w-md w-full bg-slate-900/80 backdrop-blur-xl border border-slate-800/80 p-8 rounded-3xl text-left space-y-6 shadow-2xl z-10"
       >
         <div className="flex items-center gap-3 border-b border-slate-800 pb-5">
-          <div className="w-12 h-12 bg-cyan-500/10 rounded-2xl flex items-center justify-center border border-cyan-500/20 text-cyan-400">
-            <Stethoscope className="w-6 h-6" />
+          <div className="w-12 h-12 bg-cyan-500/10 rounded-2xl flex items-center justify-center border border-cyan-500/20 text-[#2A9D9D]">
+            <UltrasoundLogo size={32} className="text-[#2A9D9D]" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-white tracking-tight">Doctor AI Assistant</h1>
+            <h1 className="text-xl font-bold text-white tracking-tight">MediSync AI</h1>
             <p className="text-xs text-slate-400">Hệ Thống Lịch Trình Y Khoa & Trợ Lý Bác Sĩ</p>
           </div>
         </div>
