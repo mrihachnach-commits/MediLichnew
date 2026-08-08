@@ -4,9 +4,8 @@ import { fileURLToPath } from 'url';
 import { GoogleGenAI, Type, FunctionDeclaration } from '@google/genai';
 import dotenv from 'dotenv';
 import nodemailer from 'nodemailer';
-import { createServer as createViteServer } from 'vite';
-import { INITIAL_EVENTS } from './src/data/initialData.js';
-import { ScheduleEvent, PriorityLevel, EventCategory } from './src/types.js';
+import { INITIAL_EVENTS } from './src/data/initialData';
+import { ScheduleEvent, PriorityLevel, EventCategory } from './src/types';
 
 dotenv.config();
 
@@ -1513,6 +1512,7 @@ function getCategoryLabel(c: EventCategory): string {
 
 async function startServer() {
   if (process.env.NODE_ENV !== 'production') {
+    const { createServer: createViteServer } = await import('vite');
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: 'spa',
