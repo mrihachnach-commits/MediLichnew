@@ -1,6 +1,5 @@
 import express from 'express';
 import path from 'path';
-import { fileURLToPath } from 'url';
 import { GoogleGenAI, Type, FunctionDeclaration } from '@google/genai';
 import dotenv from 'dotenv';
 import nodemailer from 'nodemailer';
@@ -8,9 +7,6 @@ import { INITIAL_EVENTS } from './src/data/initialData';
 import { ScheduleEvent, PriorityLevel, EventCategory } from './src/types';
 
 dotenv.config();
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 const app = express();
 app.use(express.json());

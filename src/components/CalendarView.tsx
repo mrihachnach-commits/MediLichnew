@@ -174,7 +174,22 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
         }),
       });
 
-      const result = await response.json();
+      let result: any = {};
+      const contentType = response.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        try {
+          result = await response.json();
+        } catch (parseErr) {
+          console.error('Error parsing JSON:', parseErr);
+          const rawText = await response.text();
+          result = { error: `Không thể đọc dữ liệu phản hồi (JSON lỗi). Chi tiết: ${rawText.substring(0, 120)}...` };
+        }
+      } else {
+        const rawText = await response.text();
+        console.warn('Received non-JSON response:', rawText);
+        result = { error: `Máy chủ trả về phản hồi không đúng định dạng. Chi tiết: ${rawText.substring(0, 120)}...` };
+      }
+
       if (response.ok && result.success) {
         setEmailStatusModal({
           isOpen: true,
