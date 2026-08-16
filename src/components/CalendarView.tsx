@@ -134,11 +134,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
   } | null>(null);
 
   const handleSendEmailSummary = async () => {
-    const targetEmail = settings.notificationEmail;
-    if (!targetEmail) {
-      alert('Vui lòng vào mục Cài đặt (bánh răng) để cấu hình Email nhận tóm tắt trước khi gửi!');
-      return;
-    }
+    const targetEmail = settings.notificationEmail || 'hoctap853@gmail.com';
 
     setIsSendingEmail(true);
     try {
@@ -750,11 +746,11 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
             </div>
           </div>
 
-          <div className="flex items-center gap-2 w-full sm:w-auto shrink-0 justify-end">
+          <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 w-full sm:w-auto shrink-0 justify-end">
             <button
               onClick={handleSendEmailSummary}
               disabled={isSendingEmail}
-              className="bg-sky-500/20 hover:bg-sky-500/30 border border-sky-500/50 text-sky-300 text-xs font-bold px-3 py-2 rounded-xl flex items-center justify-center gap-1.5 shadow-md transition-all flex-1 sm:flex-initial shrink-0 disabled:opacity-50"
+              className="bg-sky-500/20 hover:bg-sky-500/30 border border-sky-500/50 text-sky-300 text-xs font-bold px-3 py-2 rounded-xl flex items-center justify-center gap-1.5 shadow-md transition-all flex-1 sm:flex-initial min-w-[120px] shrink-0 disabled:opacity-50"
               title="Gửi tóm tắt toàn bộ lịch làm việc tuần này qua email đã cài đặt"
             >
               {isSendingEmail ? (
@@ -767,7 +763,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
 
             <button
               onClick={handleOpenSundayPlanner}
-              className="bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/50 text-amber-300 text-xs font-bold px-3 py-2 rounded-xl flex items-center justify-center gap-1.5 shadow-md transition-all flex-1 sm:flex-initial shrink-0"
+              className="bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/50 text-amber-300 text-xs font-bold px-3 py-2 rounded-xl flex items-center justify-center gap-1.5 shadow-md transition-all flex-1 sm:flex-initial min-w-[140px] shrink-0"
               title="Công cụ Chủ Nhật: Lên lịch & sắp xếp công việc hàng ngày cho tuần mới"
             >
               <CalendarCheck2 className="w-4 h-4 text-amber-400" />
@@ -776,7 +772,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
 
             <button
               onClick={() => setIsAddModalOpen(true)}
-              className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold px-3.5 py-2 rounded-xl flex items-center justify-center gap-1.5 shadow-md shadow-indigo-600/30 transition-all flex-1 sm:flex-initial shrink-0"
+              className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold px-3.5 py-2 rounded-xl flex items-center justify-center gap-1.5 shadow-md shadow-indigo-600/30 transition-all flex-1 sm:flex-initial min-w-[120px] shrink-0"
             >
               <Plus className="w-4 h-4" />
               <span className="truncate">Thêm Lịch Mới</span>

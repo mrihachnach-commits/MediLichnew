@@ -50,7 +50,7 @@ export const ChatbotWidget: React.FC<ChatbotWidgetProps> = ({
 
   return (
     <div
-      className={`fixed inset-y-0 right-0 w-full md:w-[380px] lg:w-[420px] z-50 bg-[#0F172A] border-l border-slate-700/80 shadow-2xl flex flex-col transition-transform duration-300 ease-in-out ${
+      className={`fixed inset-y-0 right-0 w-full sm:w-[400px] lg:w-[420px] z-50 bg-[#0F172A] border-l border-slate-700/80 shadow-2xl flex flex-col transition-transform duration-300 ease-in-out ${
         isOpen ? 'translate-x-0' : 'translate-x-full'
       }`}
     >

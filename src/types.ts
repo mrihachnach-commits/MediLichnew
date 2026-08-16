@@ -148,6 +148,7 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
   aiModel: 'gemini-1.5-flash',
   shopaikeyBaseUrl: 'https://api.shopaikey.com/v1',
   appDomain: 'https://medilich.vercel.app',
+  notificationEmail: 'hoctap853@gmail.com',
 };
 
 export interface SystemSchemaDoc {

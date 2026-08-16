@@ -604,19 +604,19 @@ export default function App() {
 
       {/* Main Body with Split View Layout when Chat is Open */}
       <div className="flex-1 flex relative w-full overflow-x-hidden">
-        {/* Mobile backdrop when chat is open */}
+        {/* Mobile & Tablet backdrop when chat is open */}
         {isChatOpen && (
           <div
             onClick={() => setIsChatOpen(false)}
-            className="fixed inset-0 bg-slate-950/70 backdrop-blur-xs md:hidden z-40 transition-opacity"
+            className="fixed inset-0 bg-slate-950/70 backdrop-blur-xs xl:hidden z-40 transition-opacity"
             aria-hidden="true"
           />
         )}
 
-        {/* Main Web Content - Shrinks/shifts to the left when AI assistant is open */}
+        {/* Main Web Content - Shrinks/shifts to the left only on extra-large desktop when AI assistant is open */}
         <div
           className={`flex-1 transition-all duration-300 ease-in-out min-w-0 flex flex-col ${
-            isChatOpen ? 'mr-0 md:mr-[380px] lg:mr-[420px]' : 'mr-0'
+            isChatOpen ? 'mr-0 xl:mr-[420px]' : 'mr-0'
           }`}
         >
           <main className="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-4 md:p-6 space-y-4 sm:space-y-6">
